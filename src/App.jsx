@@ -1,13 +1,17 @@
-import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "./Login"; // ✅ keep this if your file is Login.jsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './Login';
 
-export default function App() {
+function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        {/* Add more routes as needed */}
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
+
+export default App;
