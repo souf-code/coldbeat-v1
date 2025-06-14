@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { COLUMN_TYPES, getColumns, addColumn, updateColumn, deleteColumn, getRows, addRow, updateRow, deleteRow } from './supabase';
+import { COLUMN_TYPES, getColumns, addColumn, updateColumn, deleteColumn, getRows, addRow, updateRow, deleteRow, testConnection } from './supabase';
 
 function ProjectPage({ teamName }) {
   const [columns, setColumns] = useState([]);
@@ -13,24 +13,38 @@ function ProjectPage({ teamName }) {
   });
   const [newRow, setNewRow] = useState({});
   const [editingCell, setEditingCell] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Load columns and rows when team space changes
   useEffect(() => {
-    loadData();
-  }, [teamName]);
+    const initializeData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-  const loadData = async () => {
-    try {
-      const [columnsData, rowsData] = await Promise.all([
-        getColumns(teamName),
-        getRows(teamName)
-      ]);
-      setColumns(columnsData);
-      setRows(rowsData);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    }
-  };
+        // Test Supabase connection first
+        const isConnected = await testConnection();
+        if (!isConnected) {
+          throw new Error('Failed to connect to Supabase');
+        }
+
+        const [columnsData, rowsData] = await Promise.all([
+          getColumns(teamName),
+          getRows(teamName)
+        ]);
+        setColumns(columnsData);
+        setRows(rowsData);
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeData();
+  }, [teamName]);
 
   const handleAddColumn = async () => {
     try {
@@ -234,6 +248,28 @@ function ProjectPage({ teamName }) {
         return value || '';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 p-8 bg-gray-900 flex items-center justify-center">
+        <div className="text-white/70">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 p-8 bg-gray-900 flex items-center justify-center">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-500">
+          <h3 className="font-medium mb-2">Error Loading Data</h3>
+          <p>{error}</p>
+          <p className="mt-2 text-sm text-red-400">
+            Please check your Supabase configuration and environment variables.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 p-8 bg-gray-900">
